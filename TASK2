@@ -1,0 +1,95 @@
+import java.io.*;
+import java.net.*;
+import org.json.JSONObject;
+
+public class WeatherApp {
+
+    // OpenWeatherMap API key (replace with your own API key)
+    private static final String API_KEY = "your_api_key_here";
+    
+    // OpenWeatherMap endpoint
+    private static final String API_URL = "http://api.openweathermap.org/data/2.5/weather?q=%s&appid=%s&units=metric";
+
+    public static void main(String[] args) {
+        // Example city to fetch weather data
+        String city = "London";
+        
+        // Fetch the weather data for the city
+        JSONObject weatherData = fetchWeatherData(city);
+        
+        // Check if the data was fetched successfully
+        if (weatherData != null) {
+            displayWeatherData(weatherData);
+        } else {
+            System.out.println("Unable to fetch weather data.");
+        }
+    }
+
+    // Method to fetch weather data for a given city
+    public static JSONObject fetchWeatherData(String city) {
+        try {
+            // Construct the URL
+            String urlString = String.format(API_URL, city, API_KEY);
+            URL url = new URL(urlString);
+
+            // Open a connection to the API
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+
+            // Get the response code
+            int responseCode = connection.getResponseCode();
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                System.out.println("HTTP Request failed with code: " + responseCode);
+                return null;
+            }
+
+            // Read the response data
+            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            String inputLine;
+            StringBuilder response = new StringBuilder();
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+
+            // Parse the response JSON
+            JSONObject jsonResponse = new JSONObject(response.toString());
+            return jsonResponse;
+
+        } catch (IOException e) {
+            System.out.println("Error fetching weather data: " + e.getMessage());
+            return null;
+        }
+    }
+
+    // Method to display the weather data in a structured format
+    public static void displayWeatherData(JSONObject weatherData) {
+        try {
+            // Extract basic information from the JSON object
+            String cityName = weatherData.getString("name");
+            JSONObject main = weatherData.getJSONObject("main");
+            double temperature = main.getDouble("temp");
+            double humidity = main.getDouble("humidity");
+
+            // Extract weather description
+            JSONArray weatherArray = weatherData.getJSONArray("weather");
+            String description = weatherArray.getJSONObject(0).getString("description");
+
+            // Extract wind speed
+            JSONObject wind = weatherData.getJSONObject("wind");
+            double windSpeed = wind.getDouble("speed");
+
+            // Display the formatted weather data
+            System.out.println("Weather Information for " + cityName + ":");
+            System.out.println("------------------------------------------------");
+            System.out.println("Temperature: " + temperature + "°C");
+            System.out.println("Humidity: " + humidity + "%");
+            System.out.println("Description: " + description);
+            System.out.println("Wind Speed: " + windSpeed + " m/s");
+        } catch (Exception e) {
+            System.out.println("Error parsing the weather data: " + e.getMessage());
+        }
+    }
+}
